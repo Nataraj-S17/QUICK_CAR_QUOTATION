@@ -4,6 +4,7 @@ import AdminDashboard from '../pages/AdminDashboard';
 import AdminLogin from '../pages/AdminLogin';
 import CustomerLogin from '../pages/CustomerLogin';
 import RequirementForm from '../pages/RequirementForm';
+import RecommendationResult from '../pages/RecommendationResult';
 import Home from '../pages/Home';
 import AdminRouteGuard from '../components/AdminRouteGuard';
 import CustomerRouteGuard from '../components/CustomerRouteGuard';
@@ -19,6 +20,7 @@ const AppRoutes = () => {
             {/* Protected Customer Routes */}
             <Route element={<CustomerRouteGuard />}>
                 <Route path="/requirements" element={<RequirementForm />} />
+                <Route path="/recommendation/:id" element={<RecommendationResult />} />
                 {/* Add other customer protected routes here */}
             </Route>
 

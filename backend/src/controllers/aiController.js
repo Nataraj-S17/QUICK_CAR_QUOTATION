@@ -124,8 +124,43 @@ async function interpretCustomerRequirements(req, res) {
     }
 }
 
+/**
+ * Score and rank cars for a requirement
+ * POST /api/ai/score
+ * Body: { requirement_id: number }
+ */
+async function scoreCars(req, res) {
+    try {
+        const { requirement_id } = req.body;
+
+        if (!requirement_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'requirement_id is required'
+            });
+        }
+
+        const result = await aiService.scoreAndRankCars(requirement_id);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Cars scored and ranked successfully',
+            data: result
+        });
+
+    } catch (error) {
+        console.error('Error in scoreCars controller:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to score cars',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     interpretRequirement,
     batchInterpretRequirements,
-    interpretCustomerRequirements
+    interpretCustomerRequirements,
+    scoreCars
 };

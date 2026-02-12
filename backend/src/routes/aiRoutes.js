@@ -31,4 +31,12 @@ router.post('/interpret/batch', aiController.batchInterpretRequirements);
  */
 router.get('/interpret/customer/:customerId', aiController.interpretCustomerRequirements);
 
+/**
+ * @route   POST /api/ai/score
+ * @desc    Score and rank cars based on a requirement
+ * @body    { requirement_id: number }
+ * @access  Public
+ */
+router.post('/score', aiController.scoreCars);
+
 module.exports = router;

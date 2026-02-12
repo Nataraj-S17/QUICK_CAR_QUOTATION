@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS cars (
     mileage INTEGER NOT NULL, -- in km
     base_price DECIMAL(12, 2) NOT NULL,
     condition VARCHAR(50) NOT NULL CHECK (condition IN ('New', 'Used', 'Refurbished')),
+    body_type VARCHAR(50), -- e.g., 'SUV', 'Sedan', 'Hatchback'
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -74,7 +75,9 @@ CREATE TABLE IF NOT EXISTS quotations (
     car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,
     requirement_id INTEGER NOT NULL REFERENCES customer_requirements(id),
     ai_score DECIMAL(5, 2), -- Score from 0.00 to 10.00
+    base_price DECIMAL(12, 2),
     final_price DECIMAL(12, 2) NOT NULL,
+    pricing_breakdown JSONB, -- Stores { depreciation, mileage_factor, demand_factor }
     status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

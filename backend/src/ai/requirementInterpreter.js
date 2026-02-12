@@ -184,10 +184,57 @@ function interpretRequirement(requirementData) {
 
     const { budget, usage_type, mileage_priority, maintenance_priority } = requirementData;
 
+    // Normalization Helper
+    const normalizeUsage = (input) => {
+        if (!input) return 'CITY';
+        const upper = input.toUpperCase();
+        if (upper.includes('HIGHWAY') || upper.includes('LONG')) return 'LONG_DRIVE';
+        if (upper.includes('CITY') || upper.includes('COMMUTE')) return 'CITY';
+        if (upper.includes('FAMILY')) return 'FAMILY';
+        if (upper.includes('OFF') || upper.includes('ROAD')) return 'LONG_DRIVE'; // Map Off-road to Long Drive/SUV for now
+        if (upper.includes('BUSINESS')) return 'BUSINESS';
+        return upper; // Fallback to raw upper string if direct match
+    };
+
+    const normalizePriority = (input) => {
+        if (!input) return 'LOW'; // Default to lowest priority if missing
+        return input.toUpperCase();
+    };
+
     // Apply rule-based interpretation
-    const usageInterpretation = interpretUsageType(usage_type);
-    const mileageInterpretation = interpretMileage(mileage_priority);
-    const maintenanceInterpretation = interpretMaintenance(maintenance_priority);
+    const normalizedUsage = normalizeUsage(usage_type);
+    const normalizedMileage = normalizePriority(mileage_priority);
+
+    // Maintenance "Any" vs "High" handling
+    // DB has High/Medium/Low for maintenance. 
+    // Logic expects LOW/MEDIUM/ANY. 
+    // If DB says "High" maintenance priority, it likely means "High Importance" -> Low Maintenance? 
+    // ACTUALLY: The prompt said "Maintenance Priority: LOW, MEDIUM, ANY". 
+    // The DB schema says "CHECK (maintenance_priority IN ('Low', 'Medium', 'High'))".
+    // This is ambiguous. "High Maintenance Priority" usually means "I care a lot about maintenance (want it low)".
+    // So "High" priority -> Low maintenance cost.
+
+    const normalizeMaintenance = (input) => {
+        if (!input) return 'ANY';
+        const upper = input.toUpperCase();
+        // Prompt says: LOW -> Japanese brands (Low Maintenance).
+        // DB has: Low, Medium, High.
+        // Interpretation:
+        // Low -> Low Maintenance (Strict)
+        // Medium -> Balanced
+        // High -> No restriction (Any)
+
+        if (upper === 'LOW') return 'LOW';
+        if (upper === 'MEDIUM') return 'MEDIUM';
+        if (upper === 'HIGH') return 'ANY';
+        return 'ANY'; // Default
+    };
+
+    const normalizedMaintenance = normalizeMaintenance(maintenance_priority);
+
+    const usageInterpretation = interpretUsageType(normalizedUsage);
+    const mileageInterpretation = interpretMileage(normalizedMileage);
+    const maintenanceInterpretation = interpretMaintenance(normalizedMaintenance);
     const budgetInterpretation = categorizeBudget(budget);
 
     // Generate combined priorities
@@ -203,7 +250,7 @@ function interpretRequirement(requirementData) {
         preferred_body: usageInterpretation.preferred_body,
         min_mileage: mileageInterpretation.min_mileage,
         maintenance_score: maintenanceInterpretation.maintenance_score,
-        usage_pattern: usage_type,
+        usage_pattern: normalizedUsage,
         budget_category: budgetInterpretation.budget_category,
 
         // Priority ordering for matching algorithm
@@ -212,18 +259,18 @@ function interpretRequirement(requirementData) {
         // Detailed interpretations for transparency
         interpretations: {
             usage: {
-                type: usage_type,
+                type: normalizedUsage,
                 characteristics: usageInterpretation.characteristics,
                 description: usageInterpretation.description
             },
             mileage: {
-                priority: mileage_priority,
+                priority: normalizedMileage,
                 min_value: mileageInterpretation.min_mileage,
                 description: mileageInterpretation.description,
                 importance: mileageInterpretation.importance
             },
             maintenance: {
-                priority: maintenance_priority,
+                priority: normalizedMaintenance,
                 score: maintenanceInterpretation.maintenance_score,
                 preferred_brands: maintenanceInterpretation.preferred_brands,
                 avoid_brands: maintenanceInterpretation.avoid_brands,

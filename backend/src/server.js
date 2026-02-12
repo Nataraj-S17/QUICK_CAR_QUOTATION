@@ -18,6 +18,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ai', require('./routes/recommendationRoutes'));
+app.use('/api/ai', require('./routes/quotationRoutes'));
 
 // Root route for sanity check
 app.get('/', (req, res) => {

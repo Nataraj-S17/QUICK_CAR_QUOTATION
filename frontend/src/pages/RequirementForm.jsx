@@ -53,12 +53,25 @@ const RequirementForm = () => {
         setLoading(true);
 
         try {
-            await requirementService.submitRequirements(formData);
-            setSuccess('Requirements submitted successfully! AI is analyzing your request...');
-            // Optional: clear form or redirect after delay
+            // Map frontend state (camelCase) to backend expectations (snake_case)
+            const payload = {
+                budget: formData.budget,
+                usage_type: formData.usageType,
+                mileage_priority: formData.mileageImportance,
+                maintenance_priority: formData.maintenancePreference
+            };
+
+            const response = await requirementService.submitRequirements(payload); // Assuming response contains { success: true, requirementId: 123 }
+            // Backend returns: { success: true, data: { id: 1, ... } }
+
+            setSuccess('Requirements submitted successfully! AI is finding your match...');
+
+            // Redirect to recommendation page
             setTimeout(() => {
-                // navigate('/dashboard'); // If dashboard exists
-            }, 3000);
+                const reqId = response.data && response.data.id ? response.data.id : response.requirementId;
+                // Fallback just in case, but data.id is expected key from controller
+                navigate(`/recommendation/${reqId}`);
+            }, 1500); // Short delay to show success message
         } catch (err) {
             setError(err.message || 'Failed to submit requirements.');
         } finally {
